@@ -95,3 +95,11 @@ def test_empty_yaml_uses_all_defaults(tmp_path: Path) -> None:
     assert cfg.cycle.quote_seconds == 50
     assert cfg.display.rotation == "landscape"
     assert cfg.content.quote_to_joke_ratio == 0.7
+
+
+def test_default_config_file_loads() -> None:
+    from quotatron.config import load_config
+    cfg = load_config("config/quotatron.yaml")
+    assert cfg.display.rotation == "landscape"
+    assert len(cfg.api_refresh.sources) == 11
+    assert cfg.cycle.quote_seconds + cfg.cycle.animation_seconds == 60

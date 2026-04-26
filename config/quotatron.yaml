@@ -1,0 +1,61 @@
+display:
+  rotation: landscape          # landscape | portrait
+  driver: waveshare_2in13_v3   # supports v2/v3/v4
+  full_refresh_every: 1        # cycles between full refreshes (1 = every cycle)
+
+cycle:
+  quote_seconds: 50
+  animation_seconds: 10
+  invert_polarity_every: 1     # 1 = bounce black/white every cycle
+
+content:
+  quote_to_joke_ratio: 0.7     # 70% quotes, 30% jokes
+  no_repeat_window: 200
+  weights:
+    quotes:
+      philosophy: 1.0
+      science: 1.0
+      literature: 1.0
+      leaders: 0.7
+      humor: 0.5
+    jokes:
+      oneliner: 1.0
+      dad: 0.8
+      programming: 0.6
+      observational: 0.4
+
+api_refresh:
+  enabled: true
+  interval_minutes: 60
+  fail_silently: true
+  per_source_timeout_seconds: 5
+  max_items_per_refresh: 50
+  sources:
+    - { name: quotable_io,        kind: quote, target_categories: [philosophy, literature, leaders, humor] }
+    - { name: zenquotes,          kind: quote, target_categories: [philosophy, leaders] }
+    - { name: type_fit,           kind: quote, target_categories: [philosophy, literature, humor] }
+    - { name: stoic_quotes,       kind: quote, target_categories: [philosophy] }
+    - { name: programming_quotes, kind: quote, target_categories: [science] }
+    - { name: forismatic,         kind: quote, target_categories: [philosophy, humor] }
+    - { name: icanhazdadjoke,     kind: joke,  target_categories: [dad] }
+    - { name: jokeapi,            kind: joke,  target_categories: [oneliner, programming, observational],
+        options: { blacklist_flags: [nsfw, religious, political, racist, sexist, explicit],
+                   categories: [Programming, Misc, Pun] } }
+    - { name: official_joke_api,  kind: joke,  target_categories: [oneliner, observational] }
+    - { name: chuck_norris_io,    kind: joke,  target_categories: [oneliner] }
+    - { name: geek_jokes,         kind: joke,  target_categories: [programming] }
+
+animations:
+  enabled: true
+  shuffle: random              # random | sequential
+  blocklist: []
+  per_animation_overrides: {}  # e.g. noise_dissolve: { duration_seconds: 8 }
+
+logging:
+  level: INFO
+  path: /var/log/quotatron.log
+
+web_preview:
+  enabled_in_dev: true
+  host: 127.0.0.1
+  port: 8080
