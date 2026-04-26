@@ -24,11 +24,6 @@ class CycleConfig(BaseModel):
     invert_polarity_every: int = Field(1, ge=1)
 
 
-class ContentWeights(BaseModel):
-    model_config = ConfigDict(extra="allow")
-    # Allows arbitrary category keys with float weights.
-
-
 class ContentWeightSection(BaseModel):
     model_config = ConfigDict(extra="forbid")
     quotes: dict[str, float] = Field(default_factory=dict)

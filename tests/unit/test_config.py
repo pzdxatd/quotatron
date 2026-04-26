@@ -62,3 +62,36 @@ def test_quote_to_joke_ratio_must_be_in_range(tmp_path: Path) -> None:
     p.write_text(yaml)
     with pytest.raises(ValueError):
         load_config(p)
+
+
+def test_negative_quote_to_joke_ratio_rejected(tmp_path: Path) -> None:
+    yaml = "content:\n  quote_to_joke_ratio: -0.1\n"
+    p = tmp_path / "c.yaml"
+    p.write_text(yaml)
+    with pytest.raises(ValueError):
+        load_config(p)
+
+
+def test_unknown_top_level_key_rejected(tmp_path: Path) -> None:
+    yaml = "made_up_section:\n  whatever: 1\n"
+    p = tmp_path / "c.yaml"
+    p.write_text(yaml)
+    with pytest.raises(ValueError):
+        load_config(p)
+
+
+def test_unknown_display_key_rejected(tmp_path: Path) -> None:
+    yaml = "display:\n  rotation: landscape\n  unknown_field: 42\n"
+    p = tmp_path / "c.yaml"
+    p.write_text(yaml)
+    with pytest.raises(ValueError):
+        load_config(p)
+
+
+def test_empty_yaml_uses_all_defaults(tmp_path: Path) -> None:
+    p = tmp_path / "c.yaml"
+    p.write_text("")
+    cfg = load_config(p)
+    assert cfg.cycle.quote_seconds == 50
+    assert cfg.display.rotation == "landscape"
+    assert cfg.content.quote_to_joke_ratio == 0.7
