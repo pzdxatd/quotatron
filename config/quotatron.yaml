@@ -4,6 +4,8 @@ display:
   full_refresh_every: 1        # cycles between full refreshes (1 = every cycle)
 
 cycle:
+  # 50 + 10 = 60s total cycle (one display update per minute).
+  # Adjusting these changes refresh cadence and e-paper wear.
   quote_seconds: 50
   animation_seconds: 10
   invert_polarity_every: 1     # 1 = bounce black/white every cycle

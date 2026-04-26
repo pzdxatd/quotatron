@@ -98,8 +98,19 @@ def test_empty_yaml_uses_all_defaults(tmp_path: Path) -> None:
 
 
 def test_default_config_file_loads() -> None:
-    from quotatron.config import load_config
-    cfg = load_config("config/quotatron.yaml")
-    assert cfg.display.rotation == "landscape"
+    """Contract test for the shipping config/quotatron.yaml.
+
+    Asserts the exact values the design depends on. Deliberate changes to
+    cycle timing or source count must update this test.
+    """
+    import quotatron
+    repo_root = Path(quotatron.__file__).resolve().parents[2]
+    cfg = load_config(repo_root / "config" / "quotatron.yaml")
+    # Cycle invariant from spec: 50s quote + 10s animation = 60s total cycle.
+    assert cfg.cycle.quote_seconds == 50
+    assert cfg.cycle.animation_seconds == 10
+    # Source count from spec.
     assert len(cfg.api_refresh.sources) == 11
-    assert cfg.cycle.quote_seconds + cfg.cycle.animation_seconds == 60
+    # Display defaults.
+    assert cfg.display.rotation == "landscape"
+    assert cfg.display.driver == "waveshare_2in13_v3"
