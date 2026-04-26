@@ -1,13 +1,18 @@
 """In-memory display backend for tests and the web preview."""
 from __future__ import annotations
+from typing import Literal
 from PIL import Image
+
+DisplayEvent = Literal[
+    "full", "enter_partial", "partial", "exit_partial", "deep_clean", "shutdown"
+]
 
 
 class MockDisplay:
     def __init__(self, width: int = 250, height: int = 122) -> None:
         self.width = width
         self.height = height
-        self.history: list[tuple[str, Image.Image | None]] = []
+        self.history: list[tuple[DisplayEvent, Image.Image | None]] = []
         self._current: Image.Image | None = None
         self._in_partial = False
 
@@ -43,7 +48,9 @@ class MockDisplay:
     def shutdown(self, farewell: Image.Image | None = None) -> None:
         if farewell is not None:
             self.display_full(farewell)
-        self.history.append(("shutdown", None))
+            self.history.append(("shutdown", farewell.copy()))
+        else:
+            self.history.append(("shutdown", None))
 
     def current_image(self) -> Image.Image | None:
-        return self._current
+        return self._current.copy() if self._current is not None else None
