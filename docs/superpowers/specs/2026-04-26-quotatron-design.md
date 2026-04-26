@@ -372,6 +372,8 @@ Flash + first-boot:
     - apt install python3-spidev python3-pil fonts-dejavu
     - install uv
     - uv sync --no-dev
+    - disable GUI if installed: systemctl set-default multi-user.target;
+      systemctl disable lightdm gdm gdm3 2>/dev/null || true
     - copy systemd/quotatron.service → /etc/systemd/system/
     - systemctl enable --now quotatron
 
