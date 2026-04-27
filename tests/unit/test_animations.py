@@ -305,3 +305,63 @@ def test_ink_bleed_matches_golden(t: float) -> None:
     expected = Image.open(expected_path)
     diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
     assert diff.getbbox() is None, f"ink_bleed at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_snake_fill_matches_golden(t: float) -> None:
+    from quotatron.animations.snake_fill import SnakeFill
+    ctx = _wb_ctx()
+    out = SnakeFill().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "snake_fill" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"snake_fill at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_flood_fill_matches_golden(t: float) -> None:
+    from quotatron.animations.flood_fill import FloodFill
+    ctx = _wb_ctx()
+    out = FloodFill().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "flood_fill" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"flood_fill at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_line_shuffle_matches_golden(t: float) -> None:
+    from quotatron.animations.line_shuffle import LineShuffle
+    ctx = _wb_ctx()
+    out = LineShuffle().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "line_shuffle" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"line_shuffle at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_block_jitter_matches_golden(t: float) -> None:
+    from quotatron.animations.block_jitter import BlockJitter
+    ctx = _wb_ctx()
+    out = BlockJitter().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "block_jitter" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"block_jitter at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_scanline_tear_matches_golden(t: float) -> None:
+    from quotatron.animations.scanline_tear import ScanlineTear
+    ctx = _wb_ctx()
+    out = ScanlineTear().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "scanline_tear" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"scanline_tear at t={t} differs from golden"
