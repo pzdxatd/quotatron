@@ -47,4 +47,5 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
+addopts = "-m 'not live' --strict-markers"
 markers = ["live: requires live API access (run via make verify-sources)"]
