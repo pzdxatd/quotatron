@@ -16,6 +16,7 @@ import asyncio
 import logging
 import random
 import signal
+from collections import deque
 from datetime import date, datetime
 from typing import Optional
 
@@ -32,6 +33,8 @@ from quotatron.render import compose
 
 log = logging.getLogger(__name__)
 
+_POLARITY_HISTORY_CAP = 1000
+
 
 class Scheduler:
     """Asyncio main loop wiring content -> render -> animation -> display."""
@@ -43,6 +46,7 @@ class Scheduler:
         display: Display,
         test_max_cycles: Optional[int] = None,
         _test_sleep_override: Optional[float] = None,
+        _now: Optional[callable] = None,
     ) -> None:
         self.config = config
         self.library = library
@@ -50,13 +54,21 @@ class Scheduler:
         self._stop = False
         self._test_max_cycles = test_max_cycles
         self._test_sleep_override = _test_sleep_override
-        self.polarity_history: list[str] = []
+        self._now = _now if _now is not None else datetime.now
+        # Cap polarity_history so a long-running device doesn't grow it
+        # unboundedly (one entry per cycle = ~525k/year at 60s cycles).
+        self.polarity_history: deque[str] = deque(maxlen=_POLARITY_HISTORY_CAP)
+        self._cycle_count = 0
         self._last_deep_clean_date: date | None = None
         self._deep_clean_hour = 3
+        # Track the running task so stop() can cancel an in-flight sleep
+        # instead of waiting up to quote_seconds for the loop iteration to
+        # check self._stop.
+        self._task: asyncio.Task | None = None
 
     async def run(self) -> None:
+        self._task = asyncio.current_task()
         polarity = Polarity.NORMAL
-        cycle = 0
         prev_image: PILImage | None = None
         while not self._stop:
             item = self.library.next_item(
@@ -69,7 +81,7 @@ class Scheduler:
             dest = compose(item, polarity=polarity, rotation=self.config.display.rotation)
             log.info(
                 "cycle=%d item=%s/%s author=%r polarity=%s",
-                cycle,
+                self._cycle_count,
                 item.kind,
                 item.category,
                 item.author,
@@ -103,10 +115,15 @@ class Scheduler:
                 if self._test_sleep_override is not None
                 else self.config.cycle.quote_seconds
             )
-            await asyncio.sleep(sleep_s)
+            try:
+                await asyncio.sleep(sleep_s)
+            except asyncio.CancelledError:
+                # stop() cancelled us during sleep — exit cleanly.
+                self._stop = True
+                break
 
             # Daily deep-clean check.
-            now = datetime.now()
+            now = self._now()
             if (
                 now.hour == self._deep_clean_hour
                 and self._last_deep_clean_date != now.date()
@@ -115,13 +132,16 @@ class Scheduler:
                 self.display.deep_clean()
                 self._last_deep_clean_date = now.date()
 
-            cycle += 1
+            self._cycle_count += 1
             self.polarity_history.append(polarity.value)
-            if cycle % self.config.cycle.invert_polarity_every == 0:
+            if self._cycle_count % self.config.cycle.invert_polarity_every == 0:
                 polarity = polarity.flipped()
             prev_image = dest
 
-            if self._test_max_cycles is not None and cycle >= self._test_max_cycles:
+            if (
+                self._test_max_cycles is not None
+                and self._cycle_count >= self._test_max_cycles
+            ):
                 self._stop = True
 
     def _pick_animation(self) -> BaseAnimation:
@@ -131,10 +151,18 @@ class Scheduler:
             return fallback_animation()()
         if self.config.animations.shuffle == "random":
             return reg[random.choice(names)]()
-        return reg[sorted(names)[len(self.polarity_history) % len(names)]]()
+        return reg[sorted(names)[self._cycle_count % len(names)]]()
 
     def stop(self) -> None:
+        """Request graceful shutdown.
+
+        Cancels the running task so an in-flight ``asyncio.sleep`` exits
+        immediately instead of waiting up to ``quote_seconds`` (50s in prod)
+        for the loop iteration to notice ``self._stop``.
+        """
         self._stop = True
+        if self._task is not None and not self._task.done():
+            self._task.cancel()
 
 
 def run_service() -> int:
@@ -170,6 +198,8 @@ def run_service() -> int:
         loop.add_signal_handler(sig, sch.stop)
     try:
         loop.run_until_complete(sch.run())
+    except asyncio.CancelledError:
+        pass  # normal path when stop() cancels the task
     finally:
         farewell = compose(
             ContentItem(
