@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Quotatron Preview</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <main class="layout">
+    <aside class="anim-list">
+      <h2>Animations</h2>
+      <ul id="animations"></ul>
+    </aside>
+    <section class="preview">
+      <div class="canvas-wrap">
+        <canvas id="canvas" width="250" height="122"></canvas>
+      </div>
+      <div class="controls">
+        <button id="play">Play</button>
+        <button id="pause">Pause</button>
+        <span id="frame-counter">Frame: 0/?</span>
+      </div>
+    </section>
+    <aside class="ctrl-panel">
+      <h2>Controls</h2>
+      <label>Polarity:
+        <select id="polarity">
+          <option value="normal">normal</option>
+          <option value="inverted">inverted</option>
+        </select>
+      </label>
+      <label>Rotation:
+        <select id="rotation">
+          <option value="landscape">landscape</option>
+          <option value="portrait">portrait</option>
+        </select>
+      </label>
+      <label>Duration (s):
+        <input id="duration" type="number" value="5" min="1" max="60">
+      </label>
+    </aside>
+  </main>
+  <script src="/static/app.js"></script>
+</body>
+</html>

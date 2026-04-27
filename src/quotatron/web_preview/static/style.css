@@ -1,0 +1,17 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #1a1a1a; color: #e0e0e0; }
+.layout { display: grid; grid-template-columns: 220px 1fr 220px; gap: 16px; padding: 16px; min-height: 100vh; }
+aside { background: #2a2a2a; padding: 12px; border-radius: 6px; }
+h2 { font-size: 14px; text-transform: uppercase; opacity: 0.6; margin-bottom: 12px; }
+.anim-list ul { list-style: none; }
+.anim-list li { padding: 6px 8px; cursor: pointer; border-radius: 3px; font-size: 13px; }
+.anim-list li:hover, .anim-list li.active { background: #3a3a3a; }
+.preview { display: flex; flex-direction: column; align-items: center; gap: 16px; padding: 16px; }
+.canvas-wrap { background: #000; padding: 8px; border-radius: 4px; }
+canvas { image-rendering: pixelated; transform: scale(3); transform-origin: top left; display: block; }
+.canvas-wrap { width: 762px; height: 374px; }
+.controls { display: flex; gap: 8px; align-items: center; }
+button { padding: 6px 12px; background: #444; color: #e0e0e0; border: none; border-radius: 3px; cursor: pointer; }
+button:hover { background: #555; }
+.ctrl-panel label { display: block; margin-bottom: 12px; font-size: 13px; }
+.ctrl-panel select, .ctrl-panel input { width: 100%; margin-top: 4px; padding: 4px; background: #1a1a1a; color: #e0e0e0; border: 1px solid #444; border-radius: 3px; }
