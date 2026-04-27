@@ -425,3 +425,63 @@ def test_conway_iterations_matches_golden(t: float) -> None:
     expected = Image.open(expected_path)
     diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
     assert diff.getbbox() is None, f"conway_iterations at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_vine_grow_matches_golden(t: float) -> None:
+    from quotatron.animations.vine_grow import VineGrow
+    ctx = _wb_ctx()
+    out = VineGrow().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "vine_grow" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"vine_grow at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_dendritic_matches_golden(t: float) -> None:
+    from quotatron.animations.dendritic import Dendritic
+    ctx = _wb_ctx()
+    out = Dendritic().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "dendritic" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"dendritic at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_column_rain_matches_golden(t: float) -> None:
+    from quotatron.animations.column_rain import ColumnRain
+    ctx = _wb_ctx()
+    out = ColumnRain().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "column_rain" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"column_rain at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_falling_pixels_matches_golden(t: float) -> None:
+    from quotatron.animations.falling_pixels import FallingPixels
+    ctx = _wb_ctx()
+    out = FallingPixels().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "falling_pixels" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"falling_pixels at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_spiral_matches_golden(t: float) -> None:
+    from quotatron.animations.spiral import Spiral
+    ctx = _wb_ctx()
+    out = Spiral().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "spiral" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"spiral at t={t} differs from golden"
