@@ -1,8 +1,10 @@
 """Background API enrichment task."""
 from __future__ import annotations
 import asyncio
+import importlib
 import json
 import logging
+import pkgutil
 import sys
 from pathlib import Path
 from quotatron.config import SourceConfig, load_config
@@ -14,10 +16,16 @@ log = logging.getLogger(__name__)
 _SOURCE_CLASSES: dict[str, type[BaseSource]] = {}
 
 
-def _load_source_classes() -> dict[str, type[BaseSource]]:
-    if _SOURCE_CLASSES:
+def _load_source_classes(refresh: bool = False) -> dict[str, type[BaseSource]]:
+    """Discover BaseSource subclasses in quotatron.sources.
+
+    Pass refresh=True to re-walk the directory (used by tests that inject
+    fake source classes into the cache and need a clean slate).
+    """
+    if _SOURCE_CLASSES and not refresh:
         return _SOURCE_CLASSES
-    import importlib, pkgutil
+    if refresh:
+        _SOURCE_CLASSES.clear()
     import quotatron.sources as pkg
     for info in pkgutil.iter_modules(pkg.__path__):
         if info.name.startswith("_"):
@@ -53,7 +61,9 @@ async def refresh_once(
             continue
         items = await fetch_with_timeout(cls(), per_source_limit, timeout_s)
         if not items:
-            log.warning("source %s returned no items", sc.name)
+            # Empty results are normal (rate limits, transient 5xx). Log at
+            # info so flaky APIs don't spam WARNING in the device log.
+            log.info("source %s returned no items", sc.name)
             continue
         out_file = cache_dir / f"{sc.name}.json"
         existing = json.loads(out_file.read_text(encoding="utf-8")) if out_file.exists() else []
@@ -87,6 +97,10 @@ def verify_all_sources() -> int:
     - Iterates the configured sources, fetches limit=3 from each.
     - Prints a one-line PASS/EMPTY/FAIL per source plus a summary.
     - Exits 0 unless --strict is passed AND any source failed.
+
+    NOTE: --strict is read from sys.argv directly because the CLI dispatcher
+    in cli.py is currently a thin pass-through. Refactoring it to parse and
+    forward subcommand flags is out of scope for this milestone.
     """
     cfg = load_config("config/quotatron.yaml")
     classes = _load_source_classes()
@@ -96,18 +110,22 @@ def verify_all_sources() -> int:
     for sc in cfg.api_refresh.sources:
         cls = classes.get(sc.name)
         if cls is None:
-            print(f"  ✗ {sc.name}: unknown")
+            print(f"  FAIL {sc.name}: unknown")
             fail += 1
             continue
         try:
             items = asyncio.run(fetch_with_timeout(cls(), 3, 5.0))
             if items:
-                print(f"  ✓ {sc.name}: {len(items)} items")
+                print(f"  PASS {sc.name}: {len(items)} items")
                 ok += 1
             else:
-                print(f"  ⚠ {sc.name}: empty (rate-limited or down)")
+                print(f"  WARN {sc.name}: empty (rate-limited or down)")
         except Exception as e:
-            print(f"  ✗ {sc.name}: {type(e).__name__}: {e}")
+            print(f"  FAIL {sc.name}: {type(e).__name__}: {e}")
             fail += 1
     print(f"{ok}/{len(cfg.api_refresh.sources)} sources healthy")
-    return 1 if fail and "--strict" in sys.argv else 0
+    strict = "--strict" in sys.argv
+    if fail and strict:
+        print("strict: failing exit")
+        return 1
+    return 0
