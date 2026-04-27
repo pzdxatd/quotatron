@@ -1,7 +1,7 @@
 .PHONY: install preview test test-unit verify-sources update-goldens lint format clean smoke-on-device gallery
 
 install:
-	uv sync
+	uv sync --extra preview
 
 preview:
 	uv run quotatron preview
