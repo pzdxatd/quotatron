@@ -245,3 +245,63 @@ def test_diffusion_dissolve_matches_golden(t: float) -> None:
     expected = Image.open(expected_path)
     diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
     assert diff.getbbox() is None, f"diffusion_dissolve at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_expanding_rectangles_matches_golden(t: float) -> None:
+    from quotatron.animations.expanding_rectangles import ExpandingRectangles
+    ctx = _wb_ctx()
+    out = ExpandingRectangles().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "expanding_rectangles" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"expanding_rectangles at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_concentric_circles_matches_golden(t: float) -> None:
+    from quotatron.animations.concentric_circles import ConcentricCircles
+    ctx = _wb_ctx()
+    out = ConcentricCircles().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "concentric_circles" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"concentric_circles at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_grid_stamp_matches_golden(t: float) -> None:
+    from quotatron.animations.grid_stamp import GridStamp
+    ctx = _wb_ctx()
+    out = GridStamp().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "grid_stamp" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"grid_stamp at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_droplets_matches_golden(t: float) -> None:
+    from quotatron.animations.droplets import Droplets
+    ctx = _wb_ctx()
+    out = Droplets().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "droplets" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"droplets at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_ink_bleed_matches_golden(t: float) -> None:
+    from quotatron.animations.ink_bleed import InkBleed
+    ctx = _wb_ctx()
+    out = InkBleed().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "ink_bleed" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"ink_bleed at t={t} differs from golden"
