@@ -1,6 +1,10 @@
+import pytest
 from PIL import Image
+
 from quotatron.animations._base import (
-    AnimationContext, BaseAnimation, frame_count_for_duration,
+    AnimationContext,
+    BaseAnimation,
+    frame_count_for_duration,
 )
 from quotatron.models import Polarity
 
@@ -9,6 +13,15 @@ def test_frame_count_respects_target_fps_and_panel_minimum() -> None:
     # 10s at 5 fps = 50 frames, but panel min is 0.3s/frame → max ~33 frames.
     n = frame_count_for_duration(duration_s=10.0, target_fps=5)
     assert 20 <= n <= 33
+
+
+def test_frame_count_rejects_non_positive_inputs() -> None:
+    with pytest.raises(ValueError):
+        frame_count_for_duration(0.0, 5)
+    with pytest.raises(ValueError):
+        frame_count_for_duration(-1.0, 5)
+    with pytest.raises(ValueError):
+        frame_count_for_duration(1.0, 0)
 
 
 class _Identity(BaseAnimation):
@@ -21,15 +34,67 @@ class _Identity(BaseAnimation):
         return ctx.to_image if t >= 0.5 else ctx.from_image
 
 
-def test_base_animation_yields_frames_between_from_and_to() -> None:
-    from_img = Image.new("1", (250, 122), 1)
-    to_img = Image.new("1", (250, 122), 0)
-    ctx = AnimationContext(
-        from_image=from_img, to_image=to_img,
-        polarity=Polarity.NORMAL, width=250, height=122,
+def _ctx(width: int = 250, height: int = 122) -> AnimationContext:
+    return AnimationContext(
+        from_image=Image.new("1", (width, height), 1),
+        to_image=Image.new("1", (width, height), 0),
+        polarity=Polarity.NORMAL,
+        width=width,
+        height=height,
     )
+
+
+def test_base_animation_yields_frames_between_from_and_to() -> None:
+    ctx = _ctx()
     anim = _Identity()
     frames = list(anim.frames(ctx, duration_s=1.0))
     assert len(frames) >= 5
     assert frames[0].getpixel((0, 0)) == 1
     assert frames[-1].getpixel((0, 0)) == 0
+
+
+def test_frames_count_matches_frame_count_for_duration() -> None:
+    """Generator must yield exactly frame_count_for_duration(d, fps) frames."""
+    anim = _Identity()
+    expected = frame_count_for_duration(1.0, _Identity.target_fps)
+    assert len(list(anim.frames(_ctx(), duration_s=1.0))) == expected
+
+
+def test_cannot_instantiate_baseanimation_directly() -> None:
+    with pytest.raises(TypeError):
+        BaseAnimation()  # type: ignore[abstract]
+
+
+def test_subclass_without_name_override_raises_at_import() -> None:
+    with pytest.raises(TypeError, match="must override BaseAnimation.name"):
+        class _NoName(BaseAnimation):
+            def render(self, t: float, ctx: AnimationContext) -> Image.Image:
+                return ctx.from_image
+
+
+def test_render_returning_wrong_mode_raises() -> None:
+    class _BadMode(BaseAnimation):
+        name = "bad_mode"
+
+        def render(self, t: float, ctx: AnimationContext) -> Image.Image:
+            return Image.new("RGB", (ctx.width, ctx.height), (255, 255, 255))
+
+    with pytest.raises(ValueError, match="mode='RGB'"):
+        list(_BadMode().frames(_ctx(), duration_s=1.0))
+
+
+def test_render_returning_wrong_size_raises() -> None:
+    class _BadSize(BaseAnimation):
+        name = "bad_size"
+
+        def render(self, t: float, ctx: AnimationContext) -> Image.Image:
+            return Image.new("1", (100, 100), 1)
+
+    with pytest.raises(ValueError, match="size="):
+        list(_BadSize().frames(_ctx(), duration_s=1.0))
+
+
+def test_animation_context_is_frozen() -> None:
+    ctx = _ctx()
+    with pytest.raises((TypeError, AttributeError)):
+        ctx.width = 999  # type: ignore[misc]
