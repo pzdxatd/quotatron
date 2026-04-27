@@ -485,3 +485,51 @@ def test_spiral_matches_golden(t: float) -> None:
     expected = Image.open(expected_path)
     diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
     assert diff.getbbox() is None, f"spiral at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_hilbert_fill_matches_golden(t: float) -> None:
+    from quotatron.animations.hilbert_fill import HilbertFill
+    ctx = _wb_ctx()
+    out = HilbertFill().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "hilbert_fill" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"hilbert_fill at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_lissajous_matches_golden(t: float) -> None:
+    from quotatron.animations.lissajous import Lissajous
+    ctx = _wb_ctx()
+    out = Lissajous().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "lissajous" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"lissajous at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_matrix_rain_matches_golden(t: float) -> None:
+    from quotatron.animations.matrix_rain import MatrixRain
+    ctx = _wb_ctx()
+    out = MatrixRain().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "matrix_rain" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"matrix_rain at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_typewriter_overprint_matches_golden(t: float) -> None:
+    from quotatron.animations.typewriter_overprint import TypewriterOverprint
+    ctx = _wb_ctx()
+    out = TypewriterOverprint().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "typewriter_overprint" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"typewriter_overprint at t={t} differs from golden"
