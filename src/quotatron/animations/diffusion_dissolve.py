@@ -20,10 +20,11 @@ class DiffusionDissolve(BaseAnimation):
         if t >= 1.0:
             return ctx.to_image.copy()
         w, h = ctx.width, ctx.height
-        # Manhattan distance from nearest seed for each pixel.
-        # Max possible Manhattan in a 250x122 canvas with these seeds is ~250.
-        # Using a soft cap of 300 for the reveal distance.
-        max_dist = 300
+        # Manhattan distance from nearest seed for each pixel. With these 6
+        # well-distributed seeds, the actual max-distance in the canvas is
+        # only ~75 pixels; cap reveal at 80 so the t-sweep covers the visual
+        # range smoothly rather than saturating by t=0.25.
+        max_dist = 80
         threshold = int(t * max_dist)
         mask = Image.new("1", (w, h), 0)
         mp = mask.load()
