@@ -22,11 +22,11 @@ class Droplets(BaseAnimation):
         if t >= 1.0:
             return ctx.to_image.copy()
         w, h = ctx.width, ctx.height
-        # Each drop's radius accelerates as t² so spread feels organic.
-        # Cap radius so that at t=1 the canvas is fully covered.
-        # max(hypot from any drop to a corner) ~ 130, t² scaling needs r=130 at t=1
-        # so coefficient ≈ 130. Use 160 for safety margin.
-        r = t * t * 160
+        # 8 drops cover the canvas well; the actual max-distance to a corner
+        # from the nearest drop is ~50–60px. Coefficient 70 keeps the
+        # progression visible across the full t range instead of saturating
+        # by t≈0.5.
+        r = t * t * 70
         out = ctx.from_image.copy()
         mask = Image.new("1", (w, h), 0)
         md = ImageDraw.Draw(mask)

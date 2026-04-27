@@ -19,10 +19,11 @@ class ConcentricCircles(BaseAnimation):
         if t >= 1.0:
             return ctx.to_image.copy()
         w, h = ctx.width, ctx.height
-        # Max radius needed for any of these centers to reach the farthest
-        # corner: ~hypot(200, 95) ≈ 222. Use 200 so the canvas is fully
-        # covered by t=1.
-        max_r = 200
+        # With 5 well-distributed centers spanning the canvas, the farthest
+        # uncovered point is only ~70px from some center. Lowering max_r so
+        # the t-sweep visibly progresses across the full 0..1 range instead
+        # of saturating by t≈0.25.
+        max_r = 80
         r = t * max_r
         out = ctx.from_image.copy()
         mask = Image.new("1", (w, h), 0)
