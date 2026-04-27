@@ -31,6 +31,8 @@ if ! command -v uv >/dev/null 2>&1; then
   # uv installs to ~/.local/bin/uv; ensure PATH for this session.
   export PATH="$HOME/.local/bin:$PATH"
 fi
+# uv may have been installed in a previous session; ensure PATH covers it.
+export PATH="$HOME/.local/bin:$PATH"
 
 echo "==> Fetching Waveshare e-paper driver..."
 # The Waveshare repo path has shifted over time. Try a few candidates.
@@ -38,32 +40,48 @@ WAVESHARE_TARGET="$HERE/src/quotatron/display/_waveshare"
 WAVESHARE_TMP="$(mktemp -d)"
 trap 'rm -rf "$WAVESHARE_TMP"' EXIT
 
-CANDIDATE_PATHS=(
-  "RaspberryPi_JetsonNano_HATs/python/lib/waveshare_epd"
-  "RaspberryPi/python/lib/waveshare_epd"
-)
-
 CLONED=0
-if git clone --depth 1 https://github.com/waveshare/e-Paper "$WAVESHARE_TMP" 2>/dev/null; then
-  CLONED=1
-elif git clone --depth 1 https://github.com/waveshareteam/e-Paper "$WAVESHARE_TMP" 2>/dev/null; then
-  CLONED=1
-fi
+for repo in "https://github.com/waveshare/e-Paper" "https://github.com/waveshareteam/e-Paper"; do
+  echo "  trying $repo ..."
+  if git clone --depth 1 "$repo" "$WAVESHARE_TMP" 2>&1 | tail -3; then
+    CLONED=1
+    echo "  cloned: $repo"
+    break
+  fi
+  rm -rf "$WAVESHARE_TMP" && mkdir -p "$WAVESHARE_TMP"
+done
 
 if [[ "$CLONED" == "1" ]]; then
-  for path in "${CANDIDATE_PATHS[@]}"; do
-    if [[ -d "$WAVESHARE_TMP/$path" ]]; then
-      cp "$WAVESHARE_TMP/$path"/{epd2in13_V2.py,epd2in13_V3.py,epd2in13_V4.py,epdconfig.py} \
-         "$WAVESHARE_TARGET/" 2>/dev/null && {
-        echo "  Vendored Waveshare driver from $path"
-        break
-      }
-    fi
-  done
+  # Discover the actual location of epd2in13_V3.py — the path moves around.
+  FOUND=$(find "$WAVESHARE_TMP" -name "epd2in13_V3.py" -print -quit 2>/dev/null)
+  if [[ -n "$FOUND" ]]; then
+    SRC_DIR="$(dirname "$FOUND")"
+    echo "  found driver at: ${SRC_DIR#$WAVESHARE_TMP/}"
+    for f in epd2in13_V2.py epd2in13_V3.py epd2in13_V4.py epdconfig.py; do
+      if [[ -f "$SRC_DIR/$f" ]]; then
+        cp "$SRC_DIR/$f" "$WAVESHARE_TARGET/" && echo "    vendored $f"
+      else
+        echo "    MISSING $f in $SRC_DIR"
+      fi
+    done
+  else
+    echo "  ERROR: clone succeeded but no epd2in13_V3.py found in tree."
+    echo "  Inspect: ls $WAVESHARE_TMP"
+  fi
+else
+  echo "  WARN: could not clone Waveshare repo. Vendoring skipped."
+  echo "  Manual fallback:"
+  echo "    cd /tmp && git clone https://github.com/waveshare/e-Paper"
+  echo "    find /tmp/e-Paper -name 'epd2in13*.py' -o -name 'epdconfig.py'"
+  echo "    cp <those-files> $WAVESHARE_TARGET/"
 fi
 
-if ! python3 -c "from quotatron.display._waveshare.epd2in13_V3 import EPD; EPD()" 2>/dev/null; then
-  echo "  WARN: Waveshare driver not available -- leaving stubs in place. Display will fail to init."
+# Quick sanity check: does the wrapper instantiate? (Stubs raise RuntimeError.)
+if python3 -c "from quotatron.display._waveshare.epd2in13_V3 import EPD; EPD()" 2>/dev/null; then
+  echo "  OK: real driver vendored"
+else
+  echo "  WARN: stubs still in place. Display will fail to init at runtime."
+  echo "        See manual fallback above."
 fi
 
 echo "==> Syncing dependencies (production only)..."
