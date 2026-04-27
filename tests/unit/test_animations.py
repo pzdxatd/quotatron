@@ -365,3 +365,63 @@ def test_scanline_tear_matches_golden(t: float) -> None:
     expected = Image.open(expected_path)
     diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
     assert diff.getbbox() is None, f"scanline_tear at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_sine_sweep_matches_golden(t: float) -> None:
+    from quotatron.animations.sine_sweep import SineSweep
+    ctx = _wb_ctx()
+    out = SineSweep().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "sine_sweep" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"sine_sweep at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_ripple_matches_golden(t: float) -> None:
+    from quotatron.animations.ripple import Ripple
+    ctx = _wb_ctx()
+    out = Ripple().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "ripple" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"ripple at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_pure_noise_matches_golden(t: float) -> None:
+    from quotatron.animations.pure_noise import PureNoise
+    ctx = _wb_ctx()
+    out = PureNoise().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "pure_noise" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"pure_noise at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_perlin_fade_matches_golden(t: float) -> None:
+    from quotatron.animations.perlin_fade import PerlinFade
+    ctx = _wb_ctx()
+    out = PerlinFade().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "perlin_fade" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"perlin_fade at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_conway_iterations_matches_golden(t: float) -> None:
+    from quotatron.animations.conway_iterations import ConwayIterations
+    ctx = _wb_ctx()
+    out = ConwayIterations().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "conway_iterations" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"conway_iterations at t={t} differs from golden"
