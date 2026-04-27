@@ -100,14 +100,56 @@ def test_animation_context_is_frozen() -> None:
         ctx.width = 999  # type: ignore[misc]
 
 
-def test_registry_finds_no_user_plugins_initially() -> None:
+def test_registry_excludes_underscore_prefixed_modules() -> None:
+    """The auto-discovery contract: _base, _builtin_simple_fade, and the
+    package __init__ must never appear in the public registry. This holds
+    today (registry empty) and must continue to hold once Milestone 5
+    adds 30 plugin files."""
     from quotatron.animations import registry
     reg = registry(refresh=True)
-    # No plugin files yet — registry empty (simple_fade is _builtin_).
-    assert reg == {}
+    assert "simple_fade" not in reg, "_builtin modules must not auto-register"
+    for cls in reg.values():
+        assert not cls.__module__.rsplit(".", 1)[-1].startswith("_"), (
+            f"underscore module {cls.__module__} leaked into registry"
+        )
 
 
 def test_fallback_returns_simple_fade() -> None:
     from quotatron.animations import fallback
     from quotatron.animations._builtin_simple_fade import SimpleFade
     assert fallback() is SimpleFade
+
+
+def test_discovery_skips_broken_plugins(tmp_path, monkeypatch) -> None:
+    """A single broken plugin must not crash the animations subsystem."""
+    import sys
+    import importlib
+    import quotatron.animations as anim_pkg
+
+    # Create a fake animations directory with one broken module + one good one.
+    fake_dir = tmp_path / "fake_animations"
+    fake_dir.mkdir()
+    (fake_dir / "__init__.py").write_text("")
+    (fake_dir / "broken.py").write_text("raise RuntimeError('intentional test failure')\n")
+    (fake_dir / "good.py").write_text(
+        "from quotatron.animations._base import BaseAnimation, AnimationContext\n"
+        "from PIL import Image\n"
+        "class GoodAnim(BaseAnimation):\n"
+        "    name = 'good'\n"
+        "    def render(self, t, ctx):\n"
+        "        return Image.new('1', (ctx.width, ctx.height), 1)\n"
+    )
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    sys.modules.pop("fake_animations", None)
+    sys.modules.pop("fake_animations.good", None)
+    sys.modules.pop("fake_animations.broken", None)
+
+    fake_pkg = importlib.import_module("fake_animations")
+    monkeypatch.setattr(anim_pkg, "__file__", fake_pkg.__file__)
+    monkeypatch.setattr(anim_pkg, "__name__", "fake_animations")
+    monkeypatch.setattr(anim_pkg, "_REGISTRY", {})
+    anim_pkg._discover()
+    # Broken module skipped, good module registered.
+    assert "good" in anim_pkg._REGISTRY
+    assert "broken" not in anim_pkg._REGISTRY

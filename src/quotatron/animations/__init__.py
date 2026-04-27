@@ -5,10 +5,13 @@ skipped (treated as private/builtin).
 """
 from __future__ import annotations
 import importlib
+import logging
 import pkgutil
 from pathlib import Path
 from quotatron.animations._base import BaseAnimation
 from quotatron.animations._builtin_simple_fade import SimpleFade
+
+log = logging.getLogger(__name__)
 
 _REGISTRY: dict[str, type[BaseAnimation]] = {}
 _BUILTIN_FALLBACK: type[BaseAnimation] = SimpleFade
@@ -19,7 +22,14 @@ def _discover() -> None:
     for info in pkgutil.iter_modules([str(pkg_path)]):
         if info.name.startswith("_"):
             continue
-        mod = importlib.import_module(f"{__name__}.{info.name}")
+        # An import error in one plugin must not take down the whole
+        # animations subsystem; the device should keep working with whatever
+        # plugins did load (and fall back to simple_fade for the rest).
+        try:
+            mod = importlib.import_module(f"{__name__}.{info.name}")
+        except Exception:
+            log.exception("failed to import animation plugin %r — skipping", info.name)
+            continue
         for attr in dir(mod):
             obj = getattr(mod, attr)
             if (
@@ -27,6 +37,10 @@ def _discover() -> None:
                 and issubclass(obj, BaseAnimation)
                 and obj is not BaseAnimation
             ):
+                # Only register classes defined in the module itself, not
+                # re-imports from sibling modules.
+                if getattr(obj, "__module__", None) != mod.__name__:
+                    continue
                 if obj.name in _REGISTRY and _REGISTRY[obj.name] is not obj:
                     raise RuntimeError(
                         f"duplicate animation name '{obj.name}' "

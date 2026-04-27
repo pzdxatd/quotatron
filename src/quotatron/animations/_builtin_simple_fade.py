@@ -11,7 +11,8 @@ class SimpleFade(BaseAnimation):
     palette = "auto"
 
     def render(self, t: float, ctx: AnimationContext) -> Image.Image:
-        # Crude crossfade via Bayer dither threshold modulated by t.
+        # Crossfade in 'L' (grayscale) space, then quantize to 1-bit
+        # (PIL's default convert("1") applies Floyd-Steinberg dithering).
         from PIL import ImageChops
         if t <= 0.0:
             return ctx.from_image.copy()
