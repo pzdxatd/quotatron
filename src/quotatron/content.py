@@ -40,6 +40,17 @@ class ContentLibrary:
         no_repeat_window: int,
         seed: int | None = None,
     ) -> ContentItem:
+        """Pick the next item.
+
+        ``quote_to_joke_ratio`` endpoints: ``1.0`` always picks a quote,
+        ``0.0`` always picks a joke. Each call constructs a fresh RNG, so
+        ``seed`` makes a single draw deterministic but does NOT produce a
+        deterministic stream — pass ``seed=None`` (the default) for normal
+        production use.
+
+        Not thread-safe: ``self._recent`` mutates without locking. Intended
+        for single-event-loop use by the scheduler.
+        """
         rng = random.Random(seed)
         kind = "quote" if rng.random() < quote_to_joke_ratio else "joke"
         weights = quote_weights if kind == "quote" else joke_weights
