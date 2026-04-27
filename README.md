@@ -19,7 +19,10 @@ panel; a daily 03:00 deep-clean fully resets the display state.
 - microSD card (≥4 GB)
 - Power supply (5V via micro-USB)
 
-## Quick start
+## Quick start (dev machine — laptop / desktop)
+
+Requires [`uv`](https://docs.astral.sh/uv/) installed first
+(`curl -LsSf https://astral.sh/uv/install.sh | sh`).
 
 ```bash
 git clone https://github.com/<your>/quotatron.git
@@ -28,6 +31,10 @@ make install            # uv sync
 make preview            # web preview at http://127.0.0.1:8080
 make test-unit          # 259 unit tests
 ```
+
+> **On a Raspberry Pi, do NOT run `make install`** — it presumes `uv` is
+> already on PATH. Use `./scripts/install.sh` instead (next section). It
+> installs `uv` for you plus everything else.
 
 ## Deploying to a Pi
 
