@@ -15,3 +15,25 @@ button { padding: 6px 12px; background: #444; color: #e0e0e0; border: none; bord
 button:hover { background: #555; }
 .ctrl-panel label { display: block; margin-bottom: 12px; font-size: 13px; }
 .ctrl-panel select, .ctrl-panel input { width: 100%; margin-top: 4px; padding: 4px; background: #1a1a1a; color: #e0e0e0; border: 1px solid #444; border-radius: 3px; }
+.hidden { display: none; }
+.grid-container {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  width: 100%;
+  margin-top: 16px;
+}
+.grid-cell {
+  background: #000;
+  padding: 4px;
+  border-radius: 3px;
+  text-align: center;
+  font-size: 9px;
+}
+.grid-cell canvas {
+  image-rendering: pixelated;
+  width: 100%;
+  height: auto;
+  display: block;
+  margin-bottom: 4px;
+}

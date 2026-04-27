@@ -23,6 +23,7 @@ from quotatron.animations._base import AnimationContext
 from quotatron.content import ContentLibrary
 from quotatron.models import ContentItem, Polarity
 from quotatron.render import compose
+from quotatron.web_preview.gif_export import export_gif
 
 log = logging.getLogger(__name__)
 STATIC_DIR = Path(__file__).parent / "static"
@@ -110,6 +111,19 @@ async def stream_animation(
         yield {"event": "done", "data": "{}"}
 
     return EventSourceResponse(gen())
+
+
+@app.post("/api/animation/{name}/gif", response_model=None)
+def record_gif(name: str, duration: float = Query(10.0, ge=1.0, le=60.0)) -> dict | Response:
+    """Render and save a GIF of the animation under docs/animations/."""
+    import quotatron
+    repo_root = Path(quotatron.__file__).resolve().parents[2]
+    out_path = repo_root / "docs" / "animations" / f"{name}.gif"
+    try:
+        export_gif(name, out_path, duration_s=duration)
+    except ValueError as e:
+        return Response(status_code=404, content=str(e))
+    return {"ok": True, "path": str(out_path.relative_to(repo_root)).replace("\\", "/")}
 
 
 def run_preview() -> int:

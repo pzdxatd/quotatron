@@ -47,3 +47,71 @@ function play() {
 document.getElementById('play').onclick = play;
 document.getElementById('pause').onclick = () => { if (es) { es.close(); es = null; } };
 loadList();
+
+const gridContainer = document.getElementById('grid-container');
+const canvasWrap = document.querySelector('.canvas-wrap');
+let gridSources = [];
+
+function renderGrid() {
+  // Close any open SSE first
+  if (es) { es.close(); es = null; }
+  gridSources.forEach(s => s.close());
+  gridSources = [];
+
+  fetch('/api/animations').then(r => r.json()).then(animations => {
+    gridContainer.innerHTML = '';
+    for (const a of animations) {
+      const cell = document.createElement('div');
+      cell.className = 'grid-cell';
+      const c = document.createElement('canvas');
+      c.width = 250; c.height = 122;
+      const label = document.createElement('span');
+      label.textContent = a.name;
+      cell.appendChild(c); cell.appendChild(label);
+      gridContainer.appendChild(cell);
+
+      const cctx = c.getContext('2d');
+      const params = new URLSearchParams({
+        polarity: 'normal', rotation: 'landscape', duration: '5',
+      });
+      const src = new EventSource(`/api/animation/${a.name}/stream?${params}`);
+      src.addEventListener('frame', e => {
+        const { png_b64 } = JSON.parse(e.data);
+        const img = new Image();
+        img.onload = () => cctx.drawImage(img, 0, 0);
+        img.src = 'data:image/png;base64,' + png_b64;
+      });
+      src.addEventListener('done', () => src.close());
+      gridSources.push(src);
+    }
+  });
+}
+
+document.getElementById('grid-toggle').onclick = () => {
+  const showing = !gridContainer.classList.contains('hidden');
+  if (showing) {
+    gridContainer.classList.add('hidden');
+    canvasWrap.classList.remove('hidden');
+    gridSources.forEach(s => s.close());
+    gridSources = [];
+  } else {
+    canvasWrap.classList.add('hidden');
+    gridContainer.classList.remove('hidden');
+    renderGrid();
+  }
+};
+
+document.getElementById('record-gif').onclick = async () => {
+  if (!currentName) {
+    alert('Pick an animation first');
+    return;
+  }
+  const params = new URLSearchParams({ duration: '5' });
+  const r = await fetch(`/api/animation/${currentName}/gif?${params}`, { method: 'POST' });
+  if (r.ok) {
+    const data = await r.json();
+    alert(`Saved: ${data.path}`);
+  } else {
+    alert(`Failed: ${await r.text()}`);
+  }
+};
