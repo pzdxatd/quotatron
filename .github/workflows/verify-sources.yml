@@ -1,0 +1,22 @@
+name: Verify API Sources
+on:
+  schedule:
+    - cron: "0 5 * * *"   # 05:00 UTC daily
+  workflow_dispatch:
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    continue-on-error: true   # source flakiness shouldn't fail the build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v3
+      - run: uv sync --frozen
+      - name: Verify sources
+        run: uv run pytest -m live tests/sources/ -v --tb=short --junitxml=source-health.xml
+        continue-on-error: true
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-health-report
+          path: source-health.xml
