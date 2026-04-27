@@ -20,7 +20,7 @@ class StoicQuotesSource(BaseSource):
                 return out
             for entry in data[:limit]:
                 text = (entry.get("text") or "").strip()
-                author = (entry.get("author") or "anonymous").strip()
+                author = (entry.get("author") or "anonymous").strip() or "anonymous"
                 if not text:
                     continue
                 out.append(ContentItem(

@@ -25,7 +25,7 @@ class ZenQuotesSource(BaseSource):
                 return out
             for entry in data[:limit]:
                 text = (entry.get("q") or "").strip()
-                author = (entry.get("a") or "anonymous").strip()
+                author = (entry.get("a") or "anonymous").strip() or "anonymous"
                 if not text:
                     continue
                 out.append(ContentItem(

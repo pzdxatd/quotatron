@@ -22,6 +22,8 @@ class ForismaticSource(BaseSource):
                     data = r.json()
                 except httpx.HTTPError:
                     break  # one failure ends the batch — don't pile on
+                if not isinstance(data, dict):
+                    break  # unexpected shape — would leak AttributeError past fetch_with_timeout
                 text = (data.get("quoteText") or "").strip()
                 author = (data.get("quoteAuthor") or "anonymous").strip() or "anonymous"
                 if text:
