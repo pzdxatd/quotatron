@@ -185,3 +185,63 @@ def test_diagonal_wipe_matches_golden(t: float) -> None:
     # 0/1 vs 0/255 representations so byte-identical bilevel images match.
     diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
     assert diff.getbbox() is None, f"diagonal_wipe at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_radial_wipe_matches_golden(t: float) -> None:
+    from quotatron.animations.radial_wipe import RadialWipe
+    ctx = _wb_ctx()
+    out = RadialWipe().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "radial_wipe" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"radial_wipe at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_barn_door_wipe_matches_golden(t: float) -> None:
+    from quotatron.animations.barn_door_wipe import BarnDoorWipe
+    ctx = _wb_ctx()
+    out = BarnDoorWipe().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "barn_door_wipe" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"barn_door_wipe at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_random_pixel_dissolve_matches_golden(t: float) -> None:
+    from quotatron.animations.random_pixel_dissolve import RandomPixelDissolve
+    ctx = _wb_ctx()
+    out = RandomPixelDissolve().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "random_pixel_dissolve" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"random_pixel_dissolve at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_ordered_dither_dissolve_matches_golden(t: float) -> None:
+    from quotatron.animations.ordered_dither_dissolve import OrderedDitherDissolve
+    ctx = _wb_ctx()
+    out = OrderedDitherDissolve().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "ordered_dither_dissolve" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"ordered_dither_dissolve at t={t} differs from golden"
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_diffusion_dissolve_matches_golden(t: float) -> None:
+    from quotatron.animations.diffusion_dissolve import DiffusionDissolve
+    ctx = _wb_ctx()
+    out = DiffusionDissolve().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "diffusion_dissolve" / f"{t}.png"
+    assert expected_path.exists(), f"missing golden {expected_path}"
+    expected = Image.open(expected_path)
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"diffusion_dissolve at t={t} differs from golden"
