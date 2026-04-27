@@ -1,12 +1,17 @@
-import pytest
-from PIL import Image
+from pathlib import Path
 
+import pytest
+from PIL import Image, ImageChops
+
+import quotatron
 from quotatron.animations._base import (
     AnimationContext,
     BaseAnimation,
     frame_count_for_duration,
 )
 from quotatron.models import Polarity
+
+GOLDENS_ROOT = Path(quotatron.__file__).resolve().parents[2] / "tests" / "goldens" / "animations"
 
 
 def test_frame_count_respects_target_fps_and_panel_minimum() -> None:
@@ -153,3 +158,30 @@ def test_discovery_skips_broken_plugins(tmp_path, monkeypatch) -> None:
     # Broken module skipped, good module registered.
     assert "good" in anim_pkg._REGISTRY
     assert "broken" not in anim_pkg._REGISTRY
+
+
+def _wb_ctx() -> AnimationContext:
+    """Plain white-from / black-to context, used for all golden tests."""
+    a = Image.new("1", (250, 122), 1)  # white
+    b = Image.new("1", (250, 122), 0)  # black
+    return AnimationContext(
+        from_image=a, to_image=b, polarity=Polarity.NORMAL, width=250, height=122,
+    )
+
+
+@pytest.mark.parametrize("t", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_diagonal_wipe_matches_golden(t: float) -> None:
+    from quotatron.animations.diagonal_wipe import DiagonalWipe
+    ctx = _wb_ctx()
+    out = DiagonalWipe().render(t, ctx)
+    expected_path = GOLDENS_ROOT / "diagonal_wipe" / f"{t}.png"
+    assert expected_path.exists(), (
+        f"missing golden {expected_path} — generate with `make update-goldens`"
+    )
+    expected = Image.open(expected_path)
+    # Compare in 'L' space — ImageChops.difference is flaky on freshly-loaded
+    # mode-'1' PNGs (the underlying buffer matches but the diff reports nonzero
+    # due to bilevel palette quirks). Converting both sides to L normalizes
+    # 0/1 vs 0/255 representations so byte-identical bilevel images match.
+    diff = ImageChops.difference(out.convert("L"), expected.convert("L"))
+    assert diff.getbbox() is None, f"diagonal_wipe at t={t} differs from golden"
