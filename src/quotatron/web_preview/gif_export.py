@@ -21,6 +21,11 @@ def export_gif(name: str, out_path: Path, duration_s: float = 10.0) -> Path:
     if cls is None:
         raise ValueError(f"unknown animation: {name}")
 
+    # Use opposite-polarity from/to so the wipe shows dramatic contrast
+    # (otherwise both frames are ~95% white text-on-white-bg and the
+    # animation looks like white-to-white). This also matches real device
+    # behavior — polarity bounces every cycle, so alternating cycles ARE
+    # visually inverted relative to each other.
     cur = ContentItem(
         kind="quote", text="Hello, world.", author="anon",
         category="philosophy", source="bundled",
@@ -30,7 +35,7 @@ def export_gif(name: str, out_path: Path, duration_s: float = 10.0) -> Path:
         category="philosophy", source="bundled",
     )
     from_img = compose(cur, polarity=Polarity.NORMAL, rotation="landscape")
-    to_img = compose(nxt, polarity=Polarity.NORMAL, rotation="landscape")
+    to_img = compose(nxt, polarity=Polarity.INVERTED, rotation="landscape")
     ctx = AnimationContext(
         from_image=from_img, to_image=to_img, polarity=Polarity.NORMAL,
         width=250, height=122,
