@@ -98,3 +98,16 @@ def test_animation_context_is_frozen() -> None:
     ctx = _ctx()
     with pytest.raises((TypeError, AttributeError)):
         ctx.width = 999  # type: ignore[misc]
+
+
+def test_registry_finds_no_user_plugins_initially() -> None:
+    from quotatron.animations import registry
+    reg = registry(refresh=True)
+    # No plugin files yet — registry empty (simple_fade is _builtin_).
+    assert reg == {}
+
+
+def test_fallback_returns_simple_fade() -> None:
+    from quotatron.animations import fallback
+    from quotatron.animations._builtin_simple_fade import SimpleFade
+    assert fallback() is SimpleFade
