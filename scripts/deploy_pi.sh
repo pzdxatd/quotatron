@@ -19,7 +19,10 @@ set -euo pipefail
 HOST="${1:-pi@quotatron.local}"
 PI_PASS="${2:-${PI_PASS:-}}"     # password: 2nd arg or PI_PASS env var
 IMAGE="quotatron-pizero:latest"
-OUT=".pi-build"
+# Must be on the WSL2-native ext4 filesystem, NOT /mnt/c/ (NTFS).
+# docker cp to NTFS silently mangles Unix symlinks and drops execute bits,
+# which breaks the Python venv's bin/ directory entirely.
+OUT="/tmp/quotatron-pi-build"
 
 # ── SSH/rsync helpers ─────────────────────────────────────────────────────────
 if [[ -n "$PI_PASS" ]]; then

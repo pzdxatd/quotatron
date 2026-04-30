@@ -6,7 +6,7 @@
 #
 # WORKDIR matches the Pi's actual project path so that:
 #   - .venv/bin/* shebangs resolve correctly on-device
-#   - the editable-install .pth pointer targets the same src/ path we rsync
+#   - the src/.pth pointer targets the same path we rsync
 FROM --platform=linux/arm/v6 python:3.11-slim
 
 # C toolchain needed to compile Pillow, spidev, RPi.GPIO under QEMU
@@ -28,8 +28,12 @@ RUN python -m venv .venv
 # Deps layer: compile C extensions via QEMU (cached after first successful build)
 RUN .venv/bin/pip install --no-cache-dir -r /tmp/requirements-pi.txt
 
-# Pure-Python project install — creates .venv/bin/quotatron console script
-# and an editable .pth that points to /home/pi/quotatron/src (matches rsync target)
-COPY pyproject.toml README.md ./
+# Wire up the project source without relying on hatchling/pip editable install
+# inside QEMU (that step is fragile and slow). We create the two things an
+# editable install would produce: a .pth file and the console entry point.
 COPY src/ ./src/
-RUN .venv/bin/pip install --no-cache-dir --no-deps -e .
+RUN echo '/home/pi/quotatron/src' \
+      > .venv/lib/python3.11/site-packages/quotatron.pth \
+ && printf '#!/home/pi/quotatron/.venv/bin/python3\nimport sys\nfrom quotatron.cli import main\nsys.exit(main())\n' \
+      > .venv/bin/quotatron \
+ && chmod +x .venv/bin/quotatron
