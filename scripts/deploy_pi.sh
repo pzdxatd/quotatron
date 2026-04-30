@@ -17,8 +17,25 @@ OUT=".pi-build"
 # uv has no linux/arm/v6 wheel, so we give plain pip a frozen requirements.txt
 # generated on the host (x86). -e lines (editable project) are stripped because
 # the project is installed separately via `pip install -e .` inside the image.
+#
+# uv is Windows-only in this setup; WSL2's Windows PATH integration exposes it
+# as uv.exe. Fall back to uv if somehow available natively in WSL2.
 echo "==> Exporting requirements from uv.lock..."
-uv export --no-dev --extra hardware --no-hashes | grep -v "^-e " > requirements-pi.txt
+if command -v uv.exe &>/dev/null; then
+  uv.exe export --no-dev --extra hardware --no-hashes | grep -v "^-e " | tr -d '\r' > requirements-pi.txt
+elif command -v uv &>/dev/null; then
+  uv export --no-dev --extra hardware --no-hashes | grep -v "^-e " > requirements-pi.txt
+else
+  echo "ERROR: uv not found in WSL2 PATH and uv.exe (Windows) not reachable."
+  echo ""
+  echo "Fix: run this once from a Windows PowerShell / cmd terminal, then retry:"
+  echo "  cd C:\\Users\\LCFR\\Desktop\\Quotatron"
+  echo "  uv export --no-dev --extra hardware --no-hashes | Out-File requirements-pi.txt -Encoding utf8"
+  echo ""
+  echo "Or install uv inside WSL2 (one-time, doesn't affect Windows):"
+  echo "  curl -LsSf https://astral.sh/uv/install.sh | sh && source \$HOME/.local/bin/env"
+  exit 1
+fi
 
 # ── 1. Ensure QEMU arm/v6 binfmt is registered ────────────────────────────────
 # Docker Desktop on Windows pre-registers this; the command is idempotent.
