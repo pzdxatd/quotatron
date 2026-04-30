@@ -30,6 +30,6 @@ RUN .venv/bin/pip install --no-cache-dir -r /tmp/requirements-pi.txt
 
 # Pure-Python project install — creates .venv/bin/quotatron console script
 # and an editable .pth that points to /home/pi/quotatron/src (matches rsync target)
-COPY pyproject.toml ./
+COPY pyproject.toml README.md ./
 COPY src/ ./src/
 RUN .venv/bin/pip install --no-cache-dir --no-deps -e .
