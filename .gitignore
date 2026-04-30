@@ -18,6 +18,7 @@ wifi_profiles/
 
 # Cross-compile build artefacts
 .pi-build/
+requirements-pi.txt
 
 # Claude Code session metadata
 .claude/

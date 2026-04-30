@@ -13,6 +13,13 @@ HOST="${1:-pi@quotatron.local}"
 IMAGE="quotatron-pizero:latest"
 OUT=".pi-build"
 
+# ── 0. Export pinned requirements from uv.lock ────────────────────────────────
+# uv has no linux/arm/v6 wheel, so we give plain pip a frozen requirements.txt
+# generated on the host (x86). -e lines (editable project) are stripped because
+# the project is installed separately via `pip install -e .` inside the image.
+echo "==> Exporting requirements from uv.lock..."
+uv export --no-dev --extra hardware --no-hashes | grep -v "^-e " > requirements-pi.txt
+
 # ── 1. Ensure QEMU arm/v6 binfmt is registered ────────────────────────────────
 # Docker Desktop on Windows pre-registers this; the command is idempotent.
 echo "==> Registering arm/v6 QEMU binfmt..."
