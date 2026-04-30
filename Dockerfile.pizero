@@ -1,0 +1,19 @@
+# Cross-compile production venv for Pi Zero W (ARMv6 / linux/arm/v6).
+# Used by scripts/deploy_pi.sh — do not build manually.
+#
+# WORKDIR matches the Pi's actual project path so that:
+#   - .venv/bin/* shebangs resolve correctly on-device
+#   - the editable-install .pth pointer targets the same src/ path we rsync
+FROM --platform=linux/arm/v6 python:3.11-slim
+
+RUN pip install --no-cache-dir uv
+
+WORKDIR /home/pi/quotatron
+
+# Deps layer: cached unless pyproject.toml / uv.lock change (~5 min first build)
+COPY pyproject.toml uv.lock ./
+RUN uv sync --no-dev --extra hardware --no-install-project
+
+# Project layer: pure Python, re-runs only when src/ changes (~2 s)
+COPY src/ ./src/
+RUN uv pip install -e . --no-deps

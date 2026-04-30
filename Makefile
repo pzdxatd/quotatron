@@ -1,4 +1,6 @@
-.PHONY: install preview test test-unit verify-sources update-goldens lint format clean smoke-on-device gallery
+.PHONY: install preview test test-unit verify-sources update-goldens lint format clean smoke-on-device gallery deploy-pi
+
+PI_HOST ?= pi@quotatron.local
 
 install:
 	uv sync --extra preview
@@ -29,6 +31,9 @@ clean:
 
 smoke-on-device:
 	uv run quotatron run
+
+deploy-pi:
+	@bash scripts/deploy_pi.sh $(PI_HOST)
 
 gallery:
 	@echo "Regenerating animation gallery GIFs under docs/animations/..."

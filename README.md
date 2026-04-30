@@ -38,22 +38,38 @@ make test-unit          # 259 unit tests
 
 ## Deploying to a Pi
 
+### One-time Pi setup (SSH into the Pi)
+
 ```bash
-# 1. Convert your Windows WiFi profiles (optional, one-time)
+# 1. Flash an SD card with Raspberry Pi OS Lite, boot, SSH in.
+
+# 2. Convert Windows WiFi profiles (optional)
 uv run python scripts/wifi_to_wpa.py \
   --input "C:/path/to/Format/wifi_profiles" \
   --output wifi_profiles/wpa_supplicant.conf \
   --country PL
 
-# 2. Flash an SD card (Linux/WSL)
-./scripts/flash_sdcard.sh /dev/sdX path/to/raspios_lite.img
-
-# 3. Boot the Pi, ssh in, and install:
-ssh pi@quotatron.local
-git clone https://github.com/<your>/quotatron.git
-cd quotatron
-./scripts/install.sh    # disables GUI, enables SPI, installs systemd unit
+# 3. On the Pi: OS-level setup (SPI, GUI disable, WiFi, systemd unit)
+git clone https://github.com/<your>/quotatron.git && cd quotatron
+./scripts/install.sh
 ```
+
+### Cross-compile and deploy from your dev machine (WSL2 bash)
+
+Compiling C extensions on Pi Zero W takes 30+ min and overheats the board.
+`make deploy-pi` cross-compiles the venv in Docker for `linux/arm/v6` and
+rsyncs the pre-built result — the Pi never compiles anything.
+
+```bash
+# First deploy (~5 min: Docker build + rsync)
+make deploy-pi PI_HOST=pi@quotatron.local
+
+# Subsequent deploys after a source change (~10 s: rsync diff only)
+make deploy-pi PI_HOST=pi@quotatron.local
+```
+
+> **Requires:** Docker Desktop with WSL2 backend, `rsync` in WSL2.
+> Run from WSL2 bash — not PowerShell.
 
 ## Configuration
 

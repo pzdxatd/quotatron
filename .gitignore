@@ -16,5 +16,8 @@ wifi_profiles/
 .vscode/
 .idea/
 
+# Cross-compile build artefacts
+.pi-build/
+
 # Claude Code session metadata
 .claude/

@@ -85,7 +85,12 @@ else
 fi
 
 echo "==> Syncing dependencies (production only)..."
-uv sync --no-dev --extra hardware
+if [[ -d .venv ]]; then
+  echo "  .venv already present (deployed via 'make deploy-pi') — skipping compile."
+else
+  echo "  No .venv found — compiling on-device (slow on Pi Zero W; use deploy_pi.sh instead)."
+  uv sync --no-dev --extra hardware
+fi
 
 echo "==> Installing wpa_supplicant.conf..."
 if [[ -f wifi_profiles/wpa_supplicant.conf ]]; then
