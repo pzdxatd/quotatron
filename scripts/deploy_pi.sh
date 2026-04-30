@@ -2,7 +2,14 @@
 # Cross-compile the production venv for Pi Zero W in Docker, then rsync and
 # restart the service.  Run from project root inside WSL2:
 #
-#   bash scripts/deploy_pi.sh [pi@quotatron.local]
+#   bash scripts/deploy_pi.sh [pi@192.168.8.32] [password]
+#   # or via make:
+#   make deploy-pi PI_HOST=pi@192.168.8.32 PI_PASS=yourpassword
+#
+# TIP: Set up SSH keys once to avoid passwords entirely:
+#   ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_pi   # skip if you have a key already
+#   ssh-copy-id -i ~/.ssh/id_pi pi@192.168.8.32
+#   # then just: make deploy-pi PI_HOST=pi@192.168.8.32
 #
 # First build: ~5 min (QEMU arm/v6 compiling Pillow + spidev).
 # Subsequent builds: <30 s (Docker layer cache; re-runs only changed layers).
@@ -10,8 +17,25 @@
 set -euo pipefail
 
 HOST="${1:-pi@quotatron.local}"
+PI_PASS="${2:-${PI_PASS:-}}"     # password: 2nd arg or PI_PASS env var
 IMAGE="quotatron-pizero:latest"
 OUT=".pi-build"
+
+# ── SSH/rsync helpers ─────────────────────────────────────────────────────────
+if [[ -n "$PI_PASS" ]]; then
+  if ! command -v sshpass &>/dev/null; then
+    echo "==> Installing sshpass (required for PI_PASS option)..."
+    sudo apt-get install -y --no-install-recommends sshpass -qq
+  fi
+  export SSHPASS="$PI_PASS"
+  SSH="sshpass -e ssh -o StrictHostKeyChecking=accept-new"
+  RSYNC_RSH="sshpass -e ssh -o StrictHostKeyChecking=accept-new"
+  SUDO_PREFIX="echo '$PI_PASS' | sudo -S"
+else
+  SSH="ssh"
+  RSYNC_RSH="ssh"
+  SUDO_PREFIX="sudo"
+fi
 
 # ── 0. Export pinned requirements from uv.lock ────────────────────────────────
 # uv has no linux/arm/v6 wheel, so we give plain pip a frozen requirements.txt
@@ -38,7 +62,6 @@ else
 fi
 
 # ── 1. Ensure QEMU arm/v6 binfmt is registered ────────────────────────────────
-# Docker Desktop on Windows pre-registers this; the command is idempotent.
 echo "==> Registering arm/v6 QEMU binfmt..."
 docker run --rm --privileged tonistiigi/binfmt --install arm 2>/dev/null || true
 
@@ -60,24 +83,24 @@ docker rm "$CID"
 
 # ── 4. Sync to Pi ─────────────────────────────────────────────────────────────
 echo "==> Syncing to $HOST..."
-ssh "$HOST" "mkdir -p ~/quotatron"
+$SSH "$HOST" "mkdir -p ~/quotatron"
 
 # .venv: exact mirror — must match the cross-compiled build
-rsync -avz --delete "$OUT/.venv/" "$HOST:~/quotatron/.venv/"
+rsync -avz --delete --rsh="$RSYNC_RSH" "$OUT/.venv/" "$HOST:~/quotatron/.venv/"
 # source + data: sync without delete so Pi-local edits (e.g. quotes) survive
-rsync -avz src/      "$HOST:~/quotatron/src/"
-rsync -avz config/   "$HOST:~/quotatron/config/"
-rsync -avz content/  "$HOST:~/quotatron/content/"
-rsync -avz systemd/  "$HOST:~/quotatron/systemd/"
+rsync -avz --rsh="$RSYNC_RSH" src/     "$HOST:~/quotatron/src/"
+rsync -avz --rsh="$RSYNC_RSH" config/  "$HOST:~/quotatron/config/"
+rsync -avz --rsh="$RSYNC_RSH" content/ "$HOST:~/quotatron/content/"
+rsync -avz --rsh="$RSYNC_RSH" systemd/ "$HOST:~/quotatron/systemd/"
 
 # ── 5. Install service and restart ────────────────────────────────────────────
 echo "==> Installing systemd unit and restarting..."
-ssh "$HOST" "
-  sudo install -m 644 ~/quotatron/systemd/quotatron.service \
+$SSH "$HOST" "
+  $SUDO_PREFIX install -m 644 ~/quotatron/systemd/quotatron.service \
     /etc/systemd/system/quotatron.service
-  sudo systemctl daemon-reload
-  sudo systemctl enable quotatron
-  sudo systemctl restart quotatron
+  $SUDO_PREFIX systemctl daemon-reload
+  $SUDO_PREFIX systemctl enable quotatron
+  $SUDO_PREFIX systemctl restart quotatron
 "
 
 echo ""
