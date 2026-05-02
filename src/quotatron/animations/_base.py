@@ -6,7 +6,9 @@ from typing import Iterator, Literal
 from PIL import Image
 from quotatron.models import Polarity
 
-PANEL_MIN_FRAME_SECONDS = 0.3   # Waveshare 2.13" partial-refresh floor
+PANEL_MIN_FRAME_SECONDS = 1.0   # DFRobot/Waveshare 2.13" partial-refresh floor
+                                # on Pi Zero W — measured ~1s per partial frame
+                                # (soft-RST + LUT reload + waveform refresh).
 
 
 def frame_count_for_duration(duration_s: float, target_fps: int) -> int:

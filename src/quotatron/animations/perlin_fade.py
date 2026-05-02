@@ -1,8 +1,10 @@
 """Smooth value-noise threshold reveal (low-res grid bilinearly upsampled)."""
 from __future__ import annotations
 import random
+import numpy as np
 from PIL import Image
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
 
 CW, CH = 250, 122
 _GW, _GH = 32, 16  # low-res grid resolution
@@ -35,7 +37,8 @@ def _build_smooth_noise() -> list[list[float]]:
     return out
 
 
-_SMOOTH_NOISE = _build_smooth_noise()
+_SMOOTH_NOISE = disk_cached('perlin_fade_smooth_noise_v1', lambda: _build_smooth_noise())
+_SMOOTH_NOISE_NP = np.array(_SMOOTH_NOISE, dtype=np.float32)
 
 
 class PerlinFade(BaseAnimation):
@@ -49,14 +52,7 @@ class PerlinFade(BaseAnimation):
             return ctx.from_image.copy()
         if t >= 1.0:
             return ctx.to_image.copy()
-        w, h = ctx.width, ctx.height
-        mask = Image.new("1", (w, h), 0)
-        mp = mask.load()
-        for y in range(h):
-            row = _SMOOTH_NOISE[y]
-            for x in range(w):
-                if t > row[x]:
-                    mp[x, y] = 1
+        mask = Image.fromarray((_SMOOTH_NOISE_NP < t).astype(np.uint8) * 255, mode='L')
         out = ctx.from_image.copy()
         out.paste(ctx.to_image, mask=mask)
         return out

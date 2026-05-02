@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from PIL import Image, ImageDraw
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
 
 
 def _build_row_thresholds(height: int) -> list[float]:
@@ -12,7 +13,7 @@ def _build_row_thresholds(height: int) -> list[float]:
     return thresholds
 
 
-_ROW_THRESHOLDS = _build_row_thresholds(122)
+_ROW_THRESHOLDS = disk_cached('line_shuffle_row_thresholds_v1', lambda: _build_row_thresholds(122))
 
 
 class LineShuffle(BaseAnimation):

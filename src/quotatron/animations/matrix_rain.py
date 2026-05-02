@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from PIL import Image, ImageDraw
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
 
 CW = 250
 
@@ -15,7 +16,7 @@ def _build_column_phases() -> list[float]:
     return phases
 
 
-_PHASES = _build_column_phases()
+_PHASES = disk_cached('matrix_rain_phases_v1', lambda: _build_column_phases())
 
 
 class MatrixRain(BaseAnimation):

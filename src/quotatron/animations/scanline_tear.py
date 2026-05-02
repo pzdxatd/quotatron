@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from PIL import Image, ImageDraw
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
 
 _N_SCANLINES = 30
 
@@ -14,7 +15,7 @@ def _build_scanline_thresholds() -> list[float]:
     return thresholds
 
 
-_SCANLINE_THRESHOLDS = _build_scanline_thresholds()
+_SCANLINE_THRESHOLDS = disk_cached('scanline_tear_scanline_thresholds_v1', lambda: _build_scanline_thresholds())
 
 
 class ScanlineTear(BaseAnimation):

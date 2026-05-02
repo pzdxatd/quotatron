@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from PIL import Image, ImageDraw
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
 
 
 # Pre-compute reveal thresholds for the 8x4 = 32 cells, deterministic.
@@ -12,7 +13,7 @@ def _build_thresholds() -> list[float]:
     rng.shuffle(thresholds)
     return thresholds
 
-_THRESHOLDS = _build_thresholds()
+_THRESHOLDS = disk_cached('grid_stamp_thresholds_v1', lambda: _build_thresholds())
 
 
 class GridStamp(BaseAnimation):

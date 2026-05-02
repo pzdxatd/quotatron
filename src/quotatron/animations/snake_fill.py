@@ -1,7 +1,26 @@
 """Snake-pattern (boustrophedon) reveal."""
 from __future__ import annotations
+import numpy as np
 from PIL import Image
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
+
+CW, CH = 250, 122
+
+
+def _build_rank_map() -> np.ndarray:
+    rank = np.zeros((CH, CW), dtype=np.float32)
+    total = float(CW * CH)
+    count = 0
+    for y in range(CH):
+        xs = range(CW) if y % 2 == 0 else range(CW - 1, -1, -1)
+        for x in xs:
+            rank[y, x] = count / total
+            count += 1
+    return rank
+
+
+_RANK_MAP_NP = disk_cached('snake_fill_rank_map_np_v1', lambda: _build_rank_map())
 
 
 class SnakeFill(BaseAnimation):
@@ -15,20 +34,7 @@ class SnakeFill(BaseAnimation):
             return ctx.from_image.copy()
         if t >= 1.0:
             return ctx.to_image.copy()
-        w, h = ctx.width, ctx.height
-        n = int(t * w * h)
-        mask = Image.new("1", (w, h), 0)
-        mp = mask.load()
-        count = 0
-        for y in range(h):
-            xs = range(w) if y % 2 == 0 else range(w - 1, -1, -1)
-            for x in xs:
-                if count >= n:
-                    break
-                mp[x, y] = 1
-                count += 1
-            if count >= n:
-                break
+        mask = Image.fromarray((_RANK_MAP_NP < t).astype(np.uint8) * 255, mode='L')
         out = ctx.from_image.copy()
         out.paste(ctx.to_image, mask=mask)
         return out

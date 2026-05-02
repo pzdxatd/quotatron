@@ -1,10 +1,12 @@
 """Ordered-dither dissolve via 8x8 Bayer threshold matrix."""
 from __future__ import annotations
+import numpy as np
 from PIL import Image
 from quotatron.animations._base import AnimationContext, BaseAnimation
 
-# Standard 8x8 Bayer matrix, values 0..63.
-BAYER_8 = [
+CW, CH = 250, 122
+
+_BAYER_8 = np.array([
     [ 0, 32,  8, 40,  2, 34, 10, 42],
     [48, 16, 56, 24, 50, 18, 58, 26],
     [12, 44,  4, 36, 14, 46,  6, 38],
@@ -13,7 +15,9 @@ BAYER_8 = [
     [51, 19, 59, 27, 49, 17, 57, 25],
     [15, 47,  7, 39, 13, 45,  5, 37],
     [63, 31, 55, 23, 61, 29, 53, 21],
-]
+], dtype=np.float32)
+
+_BAYER_MAP = np.tile(_BAYER_8, (CH // 8 + 1, CW // 8 + 1))[:CH, :CW]
 
 
 class OrderedDitherDissolve(BaseAnimation):
@@ -27,15 +31,7 @@ class OrderedDitherDissolve(BaseAnimation):
             return ctx.from_image.copy()
         if t >= 1.0:
             return ctx.to_image.copy()
-        w, h = ctx.width, ctx.height
-        threshold = t * 64
-        mask = Image.new("1", (w, h), 0)
-        mp = mask.load()
-        for y in range(h):
-            row = BAYER_8[y % 8]
-            for x in range(w):
-                if row[x % 8] < threshold:
-                    mp[x, y] = 1
+        mask = Image.fromarray((_BAYER_MAP < t * 64).astype(np.uint8) * 255, mode='L')
         out = ctx.from_image.copy()
         out.paste(ctx.to_image, mask=mask)
         return out

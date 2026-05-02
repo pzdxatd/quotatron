@@ -1,8 +1,10 @@
 """Vine-growth via deterministic random walk from bottom-center with branching."""
 from __future__ import annotations
 import random
+import numpy as np
 from PIL import Image
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
 
 CW, CH = 250, 122
 
@@ -52,7 +54,10 @@ def _build_rank_map() -> list[list[float]]:
     return [[rank[y][x] / total for x in range(CW)] for y in range(CH)]
 
 
-_RANK_MAP = _build_rank_map()
+_RANK_MAP_NP = disk_cached(
+    "vine_grow_rank_v1",
+    lambda: np.array(_build_rank_map(), dtype=np.float32),
+)
 
 
 class VineGrow(BaseAnimation):
@@ -66,14 +71,7 @@ class VineGrow(BaseAnimation):
             return ctx.from_image.copy()
         if t >= 1.0:
             return ctx.to_image.copy()
-        w, h = ctx.width, ctx.height
-        mask = Image.new("1", (w, h), 0)
-        mp = mask.load()
-        for y in range(h):
-            row = _RANK_MAP[y]
-            for x in range(w):
-                if t >= row[x]:
-                    mp[x, y] = 1
+        mask = Image.fromarray((_RANK_MAP_NP <= t).astype(np.uint8) * 255, mode='L')
         out = ctx.from_image.copy()
         out.paste(ctx.to_image, mask=mask)
         return out

@@ -3,6 +3,7 @@ from __future__ import annotations
 import random
 from PIL import Image, ImageDraw
 from quotatron.animations._base import AnimationContext, BaseAnimation
+from quotatron.animations._precompute import disk_cached
 
 _COLS, _ROWS = 16, 8
 _N_BLOCKS = _COLS * _ROWS
@@ -15,7 +16,7 @@ def _build_block_thresholds() -> list[float]:
     return thresholds
 
 
-_BLOCK_THRESHOLDS = _build_block_thresholds()
+_BLOCK_THRESHOLDS = disk_cached('block_jitter_block_thresholds_v1', lambda: _build_block_thresholds())
 
 
 class BlockJitter(BaseAnimation):
