@@ -1,13 +1,13 @@
 display:
   rotation: landscape          # landscape | portrait
-  driver: waveshare_2in13_v3   # supports v2/v3/v4
-  full_refresh_every: 1        # cycles between full refreshes (1 = every cycle)
+  driver: dfrobot_2in13        # dfrobot_2in13 | waveshare_2in13_v2/v3/v4
+  full_refresh_every: 10       # cycles between full refreshes (~10 min at 60s/cycle)
 
 cycle:
-  # 50 + 10 = 60s total cycle (one display update per minute).
+  # 55 + 5 = 60s total cycle (one display update per minute).
   # Adjusting these changes refresh cadence and e-paper wear.
-  quote_seconds: 50
-  animation_seconds: 10
+  quote_seconds: 55
+  animation_seconds: 5
   invert_polarity_every: 1     # 1 = bounce black/white every cycle
 
 content:
@@ -55,7 +55,7 @@ animations:
 
 logging:
   level: INFO
-  path: /var/log/quotatron.log
+  path: /home/pi/quotatron/quotatron.log
 
 web_preview:
   enabled_in_dev: true

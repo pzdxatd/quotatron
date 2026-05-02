@@ -15,9 +15,9 @@ GOLDENS_ROOT = Path(quotatron.__file__).resolve().parents[2] / "tests" / "golden
 
 
 def test_frame_count_respects_target_fps_and_panel_minimum() -> None:
-    # 10s at 5 fps = 50 frames, but panel min is 0.3s/frame → max ~33 frames.
+    # 10s at 5 fps = 50 frames, but panel min is ~0.7s/frame → max ~14 frames.
     n = frame_count_for_duration(duration_s=10.0, target_fps=5)
-    assert 20 <= n <= 33
+    assert 5 <= n <= 20
 
 
 def test_frame_count_rejects_non_positive_inputs() -> None:

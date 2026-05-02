@@ -74,13 +74,15 @@ def test_animation_exception_falls_back_to_clean_full_refresh() -> None:
     # Inject the buggy animation so the second cycle hits the exception path.
     sch._pick_animation = lambda: _Boom()  # type: ignore[method-assign]
     asyncio.run(sch.run())
-    # The exception is caught; partial mode is exited; full refresh of dest
-    # always happens. The 2-cycle history should contain at least one
-    # exit_partial after the animation attempt.
+    # The exception is caught; display_full(dest) must still fire so the panel
+    # ends in a known state. exit_partial_mode is NOT called separately —
+    # display_full() handles the partial→full re-init internally when _partial=True.
     modes = [m for m, _ in display.history]
-    assert "exit_partial" in modes
     fulls = sum(1 for m in modes if m == "full")
     assert fulls == 2
+    # display_full must follow the failed enter_partial
+    partial_idx = modes.index("enter_partial")
+    assert "full" in modes[partial_idx:]
 
 
 def test_blocklist_excludes_animations() -> None:

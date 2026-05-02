@@ -106,11 +106,13 @@ def test_default_config_file_loads() -> None:
     import quotatron
     repo_root = Path(quotatron.__file__).resolve().parents[2]
     cfg = load_config(repo_root / "config" / "quotatron.yaml")
-    # Cycle invariant from spec: 50s quote + 10s animation = 60s total cycle.
-    assert cfg.cycle.quote_seconds == 50
-    assert cfg.cycle.animation_seconds == 10
+    # Cycle invariant: quote + animation = 60s total cycle. Animation length
+    # was tightened from 10s -> 5s once the display driver was fixed to skip
+    # per-frame LUT reload (frames are now ~0.4s on Pi Zero W vs ~1s before).
+    assert cfg.cycle.quote_seconds == 55
+    assert cfg.cycle.animation_seconds == 5
     # Source count from spec.
     assert len(cfg.api_refresh.sources) == 11
     # Display defaults.
     assert cfg.display.rotation == "landscape"
-    assert cfg.display.driver == "waveshare_2in13_v3"
+    assert cfg.display.driver == "dfrobot_2in13"

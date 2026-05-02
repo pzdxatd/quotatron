@@ -13,6 +13,7 @@ class DisplayConfig(BaseModel):
         "waveshare_2in13_v2",
         "waveshare_2in13_v3",
         "waveshare_2in13_v4",
+        "dfrobot_2in13",
     ] = "waveshare_2in13_v3"
     full_refresh_every: int = Field(1, ge=1)
 

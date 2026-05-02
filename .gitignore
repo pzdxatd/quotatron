@@ -20,5 +20,13 @@ wifi_profiles/
 .pi-build/
 requirements-pi.txt
 
+# Local pre-warm output for animation precompute caches
+# (computed locally and shipped to the Pi via scp)
+_precompute_cache/
+
+# Runtime cache on device (regenerated)
+cache/
+*.log
+
 # Claude Code session metadata
 .claude/

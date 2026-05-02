@@ -88,6 +88,10 @@ class Scheduler:
                 polarity.value,
             )
 
+            use_full = (
+                self._cycle_count % self.config.display.full_refresh_every == 0
+            )
+
             if prev_image is not None and self.config.animations.enabled:
                 anim = self._pick_animation()
                 ctx = AnimationContext(
@@ -105,10 +109,11 @@ class Scheduler:
                         await asyncio.sleep(0)
                 except Exception:
                     log.exception("animation %s raised — using fallback", anim.name)
-                self.display.exit_partial_mode()
+
+            if use_full:
                 self.display.display_full(dest)
             else:
-                self.display.display_full(dest)
+                self.display.display_partial(dest)
 
             sleep_s = (
                 self._test_sleep_override
@@ -175,10 +180,11 @@ def run_service() -> int:
     """
     from quotatron.config import load_config
     from quotatron.content import ContentLibrary
-    from quotatron.display.epaper import WaveshareDisplay
     from quotatron.emergency_quotes import emergency_library
     from quotatron.models import ContentItem
     from quotatron.render import compose
+
+    from pathlib import Path
 
     cfg = load_config("config/quotatron.yaml")
     logging.basicConfig(
@@ -186,18 +192,52 @@ def run_service() -> int:
         filename=cfg.logging.path,
         format="%(asctime)s %(levelname)s %(name)s: %(message)s",
     )
+    cache_dir = Path("cache")
     try:
-        lib = ContentLibrary.from_disk("content")
+        lib = ContentLibrary.from_disk("content", cache_dir=cache_dir)
     except Exception:
         log.exception("content library failed to load — using emergency quotes")
         lib = emergency_library()
-    display = WaveshareDisplay(driver=cfg.display.driver)
+    log.info("content library loaded: %d items", len(lib.items))
+    if cfg.display.driver == "dfrobot_2in13":
+        from quotatron.display.dfrobot import DFRobotDisplay
+        display = DFRobotDisplay()
+    else:
+        from quotatron.display.epaper import WaveshareDisplay
+        display = WaveshareDisplay(driver=cfg.display.driver)
     sch = Scheduler(config=cfg, library=lib, display=display)
     loop = asyncio.new_event_loop()
     for sig in (signal.SIGTERM, signal.SIGINT):
         loop.add_signal_handler(sig, sch.stop)
+
+    async def _run_with_refresh() -> None:
+        refresh_task = None
+        if cfg.api_refresh.enabled:
+            from quotatron.api_refresh import refresh_loop
+            n_sources = max(1, len(cfg.api_refresh.sources))
+            per_source = max(1, cfg.api_refresh.max_items_per_refresh // n_sources)
+            refresh_task = asyncio.create_task(
+                refresh_loop(
+                    sources=cfg.api_refresh.sources,
+                    cache_dir=cache_dir,
+                    interval_minutes=cfg.api_refresh.interval_minutes,
+                    per_source_limit=per_source,
+                    timeout_s=cfg.api_refresh.per_source_timeout_seconds,
+                    library=lib,
+                )
+            )
+        try:
+            await sch.run()
+        finally:
+            if refresh_task is not None:
+                refresh_task.cancel()
+                try:
+                    await refresh_task
+                except (asyncio.CancelledError, Exception):
+                    pass
+
     try:
-        loop.run_until_complete(sch.run())
+        loop.run_until_complete(_run_with_refresh())
     except asyncio.CancelledError:
         pass  # normal path when stop() cancels the task
     finally:

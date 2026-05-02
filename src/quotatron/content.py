@@ -1,10 +1,13 @@
 """Content library: bundled JSON loading + weighted picker."""
 from __future__ import annotations
 import json
+import logging
 import random
 from collections import deque
 from pathlib import Path
 from quotatron.models import ContentItem
+
+log = logging.getLogger(__name__)
 
 
 class ContentLibrary:
@@ -15,7 +18,7 @@ class ContentLibrary:
         self._recent: deque[str] = deque(maxlen=1000)
 
     @classmethod
-    def from_disk(cls, root: str | Path) -> "ContentLibrary":
+    def from_disk(cls, root: str | Path, cache_dir: str | Path | None = None) -> "ContentLibrary":
         root = Path(root)
         items: list[ContentItem] = []
         for kind_dir, kind in (("quotes", "quote"), ("jokes", "joke")):
@@ -29,7 +32,26 @@ class ContentLibrary:
                         category=raw.get("category", category),
                         source=raw.get("source", "bundled"),
                     ))
+        if cache_dir is not None:
+            cache_path = Path(cache_dir)
+            if cache_path.exists():
+                for f in cache_path.glob("*.json"):
+                    try:
+                        for raw in json.loads(f.read_text(encoding="utf-8")):
+                            try:
+                                items.append(ContentItem.model_validate(raw))
+                            except Exception:
+                                pass
+                    except Exception:
+                        log.warning("failed to load cache file %s", f)
         return cls(items=items)
+
+    def extend(self, new_items: list[ContentItem]) -> int:
+        """Add new items, skipping exact-text duplicates. Returns count added."""
+        existing = {it.text for it in self.items}
+        added = [it for it in new_items if it.text not in existing]
+        self.items.extend(added)
+        return len(added)
 
     def next_item(
         self,

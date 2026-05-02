@@ -49,6 +49,7 @@ async def refresh_once(
     cache_dir: str | Path,
     timeout_s: float = 5.0,
     per_source_limit: int = 5,
+    library=None,
 ) -> int:
     classes = _load_source_classes()
     cache_dir = Path(cache_dir)
@@ -74,17 +75,31 @@ async def refresh_once(
             json.dumps(existing, ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+        if library is not None:
+            added = library.extend(items)
+            log.info("source %s: +%d items in library", sc.name, added)
         total += len(items)
     return total
 
 
 async def refresh_loop(
-    sources: list[SourceConfig], cache_dir: str | Path, interval_minutes: int
+    sources: list[SourceConfig],
+    cache_dir: str | Path,
+    interval_minutes: int,
+    per_source_limit: int = 5,
+    timeout_s: float = 5.0,
+    library=None,
 ) -> None:
     while True:
         try:
-            n = await refresh_once(sources=sources, cache_dir=cache_dir)
-            log.info("api_refresh: %d new items", n)
+            n = await refresh_once(
+                sources=sources,
+                cache_dir=cache_dir,
+                timeout_s=timeout_s,
+                per_source_limit=per_source_limit,
+                library=library,
+            )
+            log.info("api_refresh: %d new items fetched", n)
         except Exception:
             log.exception("api_refresh failed (silenced)")
         await asyncio.sleep(interval_minutes * 60)
