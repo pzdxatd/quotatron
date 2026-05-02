@@ -109,8 +109,8 @@ def test_default_config_file_loads() -> None:
     # Cycle invariant: quote + animation = 60s total cycle. Animation length
     # was tightened from 10s -> 5s once the display driver was fixed to skip
     # per-frame LUT reload (frames are now ~0.4s on Pi Zero W vs ~1s before).
-    assert cfg.cycle.quote_seconds == 55
-    assert cfg.cycle.animation_seconds == 5
+    assert cfg.cycle.quote_seconds == 53
+    assert cfg.cycle.animation_seconds == 7
     # Source count from spec.
     assert len(cfg.api_refresh.sources) == 11
     # Display defaults.

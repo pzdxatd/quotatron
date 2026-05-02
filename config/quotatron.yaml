@@ -4,10 +4,10 @@ display:
   full_refresh_every: 10       # cycles between full refreshes (~10 min at 60s/cycle)
 
 cycle:
-  # 55 + 5 = 60s total cycle (one display update per minute).
+  # 53 + 7 = 60s total cycle (one display update per minute).
   # Adjusting these changes refresh cadence and e-paper wear.
-  quote_seconds: 55
-  animation_seconds: 5
+  quote_seconds: 53
+  animation_seconds: 7
   invert_polarity_every: 1     # 1 = bounce black/white every cycle
 
 content:
